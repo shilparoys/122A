@@ -12,13 +12,15 @@ unsigned char array[4];		//password array
 int num = 0;				//array index
 int password = 0;			//user entered password
 unsigned char go = 0;		//control to exit pswd_wait
-unsigned char isValid = 0;
-int masterP1 = 1234;
+unsigned char isValid = 0;	//user entered correct password or not 
+int cursorIndex = 12;		//cursor index
+//hardcoded passwords 
+int masterP1 = 1234;		
 int masterP2 = 5112;
 int masterp3 = 9727;
-int k = 12;
 
-enum masterStates {pswd_wait, pswd_read, checkPwd, door};
+
+enum masterStates {pswd_wait, pswd_read, checkPwd, door, unlock, lock };
 int TickFct_master( int state ) {
 	switch( state ) {
 		case -1:
@@ -45,10 +47,25 @@ int TickFct_master( int state ) {
 				state = pswd_wait;
 			}
 			else{
+				LCD_ClearScreen();
 				state = door;
 			}
 			break;
 		case door:
+			btn = GetKeypadKey();
+			if (btn == '3'){
+				state = unlock;
+			}
+			else if(btn == '6'){
+				state = lock;
+			}
+			else{
+				state = door;
+			}
+			break;
+		case lock:
+			break;
+		case unlock:
 			break;
 		default:
 			break;
@@ -58,12 +75,12 @@ int TickFct_master( int state ) {
 			LCD_DisplayString1(1, "Enter Pwd: ");
 			break;
 		case pswd_read:
-			LCD_Cursor(k++);
-			LCD_WriteData(btn);
+			LCD_Cursor(cursorIndex++);
+			LCD_WriteData('*');
 			array[num++] = btn;
 			i++;
 			if(i == 4){
-				k = 12;
+				cursorIndex = 12;
 				go = 1;
 				i = 0;
 				num = 0;
@@ -71,7 +88,6 @@ int TickFct_master( int state ) {
 			break;
 		case checkPwd:
 			LCD_ClearScreen();
-			LCD_DisplayString1(1, "check pwd");
 			password = atoi(array);
 			if(password == masterP1 || password == masterP2 || password == masterp3){
 				LCD_DisplayString(1, "Correct Pwd");
@@ -82,11 +98,21 @@ int TickFct_master( int state ) {
 				memset(&array[0], 0, sizeof(array));
 				isValid = 0;
 			}
-			break;		
+			break;
 		case door:
+			LCD_DisplayString1(1, "Unlock: 3");
+			LCD_DisplayString1(17,"Lock:   6");
+			break;
+		case lock:
+			LCD_ClearScreen();
+			LCD_DisplayString1(1, "Lock");
+			break;
+		case unlock:
+			LCD_ClearScreen();
+			LCD_DisplayString1(1, "Unlock");
 			break;
 		default:
-		break;
+			break;
 	}
 	
 	return state;
@@ -96,7 +122,7 @@ int TickFct_master( int state ) {
 
 int main(void)
 {
-	DDRC = 0xF0; PORTC = 0x0F;
+	DDRC = 0xF0; PORTC = 0x0F;//keypad 
 	DDRD = 0xFF; PORTD = 0x00;//lcd data lines
 	DDRA = 0xFF; PORTA = 0x00;//lcd control lines
 	LCD_init();
@@ -108,7 +134,7 @@ int main(void)
 	// define tasks
 	unsigned char i=0; // task counter
 	tasks[i].state = -1;
-	tasks[i].period = 100;
+	tasks[i].period = 20;
 	tasks[i].elapsedTime = tasks[i].period;
 	tasks[i].TickFct = &TickFct_master;
 	
