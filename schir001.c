@@ -134,7 +134,7 @@ int main(void)
 	// define tasks
 	unsigned char i=0; // task counter
 	tasks[i].state = -1;
-	tasks[i].period = 20;
+	tasks[i].period = 100;
 	tasks[i].elapsedTime = tasks[i].period;
 	tasks[i].TickFct = &TickFct_master;
 	
