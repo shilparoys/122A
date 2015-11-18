@@ -1,3 +1,4 @@
+//header files
 #include <avr/io.h>
 #include "bit.h"
 #include "keypad.h"
@@ -5,18 +6,21 @@
 #include "scheduler.h"
 #include <stdlib.h>
 
-int i = 0;		//password count counter
-int index = 11;	//lcd cursor
+int i = 0;					//password count counter
 unsigned char btn;			//keypad press
 unsigned char array[4];		//password array
 int num = 0;				//array index
-int password = 0;
-unsigned char go = 0;
-enum masterStates {pswd_wait, pswd_read, checkPwd};
+int password = 0;			//user entered password
+unsigned char go = 0;		//control to exit pswd_wait
+unsigned char isValid = 0;
+int masterP1 = 1234;
+int masterP2 = 5112;
+int masterp3 = 9727;
+
+enum masterStates {pswd_wait, pswd_read, checkPwd, door};
 int TickFct_master( int state ) {
 	switch( state ) {
 		case -1:
-			i = 0;
 			state = pswd_wait;
 			break;
 		case pswd_wait:
@@ -25,6 +29,7 @@ int TickFct_master( int state ) {
 				state = pswd_read;
 			}
 			else if (go == 1){
+				go = 0;
 				state = checkPwd;
 			}
 			else
@@ -34,6 +39,14 @@ int TickFct_master( int state ) {
 			state = pswd_wait;
 			break;
 		case checkPwd:
+			if(!isValid){
+				state = pswd_wait;
+			}
+			else{
+				state = door;
+			}
+			break;
+		case door:
 			break;
 		default:
 			break;
@@ -49,13 +62,26 @@ int TickFct_master( int state ) {
 			i++;
 			if(i == 4){
 				go = 1;
+				i = 0;
+				num = 0;
 			}
 			break;
 		case checkPwd:
 			LCD_ClearScreen();
 			LCD_DisplayString1(1, "check pwd");
 			password = atoi(array);
+			if(password == masterP1 || password == masterP2 || password == masterp3){
+				LCD_DisplayString(1, "Correct Password");
+				isValid = 1;
+			}
+			else{
+				LCD_DisplayString(1, "Incorrect Password");
+				memset(&array[0], 0, sizeof(array));
+				isValid = 0;
+			}
 			break;		
+		case door:
+			break;
 		default:
 		break;
 	}
