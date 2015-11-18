@@ -78,5 +78,13 @@ void LCD_DisplayString( unsigned char column, const unsigned char* string) {
 	}
 }
 
+void LCD_DisplayString1( unsigned char column, const unsigned char* string) {
+	
+	unsigned char c = column;
+	while(*string) {
+		LCD_Cursor(c++);
+		LCD_WriteData(*string++);
+	}
+}
 #endif // LCD_H
 
