@@ -16,6 +16,7 @@ unsigned char isValid = 0;
 int masterP1 = 1234;
 int masterP2 = 5112;
 int masterp3 = 9727;
+int k = 12;
 
 enum masterStates {pswd_wait, pswd_read, checkPwd, door};
 int TickFct_master( int state ) {
@@ -40,6 +41,7 @@ int TickFct_master( int state ) {
 			break;
 		case checkPwd:
 			if(!isValid){
+				LCD_ClearScreen();
 				state = pswd_wait;
 			}
 			else{
@@ -56,11 +58,12 @@ int TickFct_master( int state ) {
 			LCD_DisplayString1(1, "Enter Pwd: ");
 			break;
 		case pswd_read:
-			LCD_Cursor(1);
+			LCD_Cursor(k++);
 			LCD_WriteData(btn);
 			array[num++] = btn;
 			i++;
 			if(i == 4){
+				k = 12;
 				go = 1;
 				i = 0;
 				num = 0;
@@ -71,11 +74,11 @@ int TickFct_master( int state ) {
 			LCD_DisplayString1(1, "check pwd");
 			password = atoi(array);
 			if(password == masterP1 || password == masterP2 || password == masterp3){
-				LCD_DisplayString(1, "Correct Password");
+				LCD_DisplayString(1, "Correct Pwd");
 				isValid = 1;
 			}
 			else{
-				LCD_DisplayString(1, "Incorrect Password");
+				LCD_DisplayString(1, "Incorrect Pwd");
 				memset(&array[0], 0, sizeof(array));
 				isValid = 0;
 			}
