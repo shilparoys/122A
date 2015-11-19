@@ -5,6 +5,7 @@
 #include "lcd.h"
 #include "scheduler.h"
 #include <stdlib.h>
+#include "usart_ATmega1284.h"
 
 int i = 0;					//password count counter
 unsigned char btn;			//keypad press
@@ -65,8 +66,14 @@ int TickFct_master( int state ) {
 			}
 			break;
 		case lock:
+			if(USART_IsSendReady(0)){
+				USART_Send(0x01,0);
+			}
 			break;
 		case unlock:
+			if(USART_IsSendReady(0)){
+				USART_Send(0x00, 0);
+			}
 			break;
 		default:
 			break;
@@ -124,6 +131,10 @@ int TickFct_master( int state ) {
 
 int main(void)
 {
+	initUSART(0);
+	USART_Flush(0);
+	
+	//initalize ports
 	DDRC = 0xF0; PORTC = 0x0F;//keypad 
 	DDRB = 0xFF; PORTB = 0x00;//lcd data lines
 	DDRA = 0xFF; PORTA = 0x00;//lcd control lines

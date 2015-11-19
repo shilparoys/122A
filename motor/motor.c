@@ -1,5 +1,6 @@
 #include <avr/io.h>
 #include "scheduler.h"
+#include "usart_ATmega1284.h"
 
 char motor_arr[] = {0x11, 0x33, 0x22, 0x66, 0x44, 0xCC, 0x88, 0x99};
 int position = 0;
@@ -7,12 +8,15 @@ char keypad;
 int numPhases = 0;
 unsigned char go = 0;
 unsigned char toLock = '0';
-enum State{input, cw, ccw, stop};
+enum State{receive, input, cw, ccw, stop};
 int motor(int state)
 {
 	switch(state)
 	{
 		case -1:
+			state = receive;
+			break;
+		case receive:
 			state = input;
 			break;
 		case input:
@@ -58,7 +62,12 @@ int motor(int state)
 	{
 		case input:
 			break;
-
+		case receive:
+			if(USART_HasReceived(0)){
+				toLock = USART_Receive(0);
+				USART_Flush(0);
+			}
+			break;
 		case cw:
 			if(position < 7 && numPhases > 0){
 				numPhases--;
@@ -100,8 +109,9 @@ int motor(int state)
 
 int main(void)
 {
-	PORTA = 0x00; DDRA = 0xFF;
-	PORTC = 0x0F; DDRC = 0xF0;
+	initUSART(0);
+	PORTA = 0x00; DDRA = 0xFF; //stepper motor
+
 	
 	tasksNum = 1;
 	task function[1];
