@@ -1,28 +1,29 @@
 #include <avr/io.h>
 #include "scheduler.h"
-#include "keypad.h"
 
 char motor_arr[] = {0x11, 0x33, 0x22, 0x66, 0x44, 0xCC, 0x88, 0x99};
 int position = 0;
 char keypad;
 int numPhases = 0;
 unsigned char go = 0;
+unsigned char toLock = '0';
 enum State{input, cw, ccw, stop};
 int motor(int state)
 {
-	keypad = GetKeypadKey();
 	switch(state)
 	{
 		case -1:
 			state = input;
 			break;
 		case input:
-			if(keypad == '1'){
+			if(toLock == '1'){
 				numPhases = (90/5.625) * 64;
+				toLock = '2';
 				state = ccw;
 			}
-			else if(keypad == '2'){
+			else if(toLock == '0'){
 				numPhases = (90/5.625)*64;
+				toLock = '2';
 				state = cw;
 			}
 			else
