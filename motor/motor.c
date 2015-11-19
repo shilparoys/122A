@@ -7,7 +7,7 @@ int position = 0;
 char keypad;
 int numPhases = 0;
 unsigned char go = 0;
-unsigned char toLock = '0';
+unsigned char toLock = 0x02;
 enum State{receive, input, cw, ccw, stop};
 int motor(int state)
 {
@@ -20,18 +20,18 @@ int motor(int state)
 			state = input;
 			break;
 		case input:
-			if(toLock == '1'){
+			if(toLock == 0x01){
 				numPhases = (90/5.625) * 64;
-				toLock = '2';
+				toLock = 0x02;
 				state = ccw;
 			}
-			else if(toLock == '0'){
+			else if(toLock == 0x00){
 				numPhases = (90/5.625)*64;
-				toLock = '2';
+				toLock = 0x02;
 				state = cw;
 			}
 			else
-				state = stop;
+				state = input;
 		break;
 		case cw:
 			if(go == 1){
@@ -60,13 +60,13 @@ int motor(int state)
 	}
 	switch(state)
 	{
-		case input:
-			break;
 		case receive:
 			if(USART_HasReceived(0)){
 				toLock = USART_Receive(0);
 				USART_Flush(0);
 			}
+			break;
+		case input:
 			break;
 		case cw:
 			if(position < 7 && numPhases > 0){

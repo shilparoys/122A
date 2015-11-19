@@ -68,11 +68,13 @@ int TickFct_master( int state ) {
 		case lock:
 			if(USART_IsSendReady(0)){
 				USART_Send(0x01,0);
+				LCD_DisplayString1(1, "Sending Lock");
 			}
 			break;
 		case unlock:
 			if(USART_IsSendReady(0)){
 				USART_Send(0x00, 0);
+				LCD_DisplayString1(1, "Send Unlock");
 			}
 			break;
 		default:
