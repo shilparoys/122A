@@ -13,6 +13,7 @@ int num = 0;				//array index
 int password = 0;			//user entered password
 unsigned char go = 0;		//control to exit pswd_wait
 unsigned char isValid = 0;	//user entered correct password or not 
+unsigned char isLock= 0;	//lock or unlock
 int cursorIndex = 12;		//cursor index
 //hardcoded passwords 
 int masterP1 = 1234;		
@@ -104,10 +105,12 @@ int TickFct_master( int state ) {
 			LCD_DisplayString1(17,"Lock:   6");
 			break;
 		case lock:
+			isLock = 1;
 			LCD_ClearScreen();
 			LCD_DisplayString1(1, "Lock");
 			break;
 		case unlock:
+			isLock = 0;
 			LCD_ClearScreen();
 			LCD_DisplayString1(1, "Unlock");
 			break;
@@ -119,11 +122,10 @@ int TickFct_master( int state ) {
 }
 
 
-
 int main(void)
 {
 	DDRC = 0xF0; PORTC = 0x0F;//keypad 
-	DDRD = 0xFF; PORTD = 0x00;//lcd data lines
+	DDRB = 0xFF; PORTB = 0x00;//lcd data lines
 	DDRA = 0xFF; PORTA = 0x00;//lcd control lines
 	LCD_init();
 	
