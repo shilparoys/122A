@@ -29,9 +29,15 @@ unsigned char numWrongPass = '0';
 int masterP1 = 1234;		
 int masterP2 = 5112;
 int masterp3 = 9727;
+unsigned char menu1[] = "Intruder Alert\n";
+unsigned char menu2[] = "Lock\n";	//5
+unsigned char menu3[] = "Unlock\n";
+int menu2Counter = 0;
+int menu3Counter = 0;
+unsigned char menu2Flag = '0';
+unsigned char menu3Flag = '0';
 
-
-enum masterStates {pswd_wait, pswd_read, checkPwd, door, unlock, lock };
+enum masterStates {pswd_wait, pswd_read, checkPwd, door, unlock, lock, lockBluetooth, unlockBluetooth };
 int TickFct_master( int state ) {
 	switch( state ) {
 		case -1:
@@ -78,13 +84,31 @@ int TickFct_master( int state ) {
 		case lock:
 			toLock = '1';
 			isLock = '1';
-			state = pswd_wait;
+			//state = pswd_wait;
+			state = lockBluetooth;
+			break;
+		case lockBluetooth:
+			if(menu2Flag == '1'){
+				menu2Flag = '0';
+				state = pswd_wait;
+			}
+			else{
+				state = lockBluetooth;
+			}
 			break;
 		case unlock:
 			toLock = '0';
 			isLock = '0';
-			state = pswd_wait;
+			state = unlockBluetooth;
 			break;
+		case unlockBluetooth:
+			if(menu3Flag == '1'){
+				menu3Flag = '0';
+				state = pswd_wait;
+			}
+			else{
+				state = unlockBluetooth;
+			}
 		default:
 			break;
 	}
@@ -129,6 +153,28 @@ int TickFct_master( int state ) {
 			LCD_ClearScreen();
 			LCD_DisplayString1(1, "Lock");
 			break;
+		case lockBluetooth:
+			if(menu2Counter > 4){
+				menu2Flag = '1';
+				menu2Counter = 0;
+			}
+			else{
+				if(USART_IsSendReady(0)){
+					USART_Send(menu2[menu2Counter++], 0);
+				}
+			}
+			break;
+		case unlockBluetooth:
+			if(menu3Counter > 6){
+				menu3Flag = '1';
+				menu3Counter = 0;
+			}
+			else{
+				if(USART_IsSendReady(0)){
+					USART_Send(menu3[menu3Counter++], 0);
+				}
+			}
+			break;
 		case unlock:
 			LCD_ClearScreen();
 			LCD_DisplayString1(1, "Unlock");
@@ -139,9 +185,7 @@ int TickFct_master( int state ) {
 	
 	return state;
 }
-unsigned char menu1[] = "Intruder Alert\n";
-unsigned char menu2[] = "Lock\n";
-unsigned char menu3[] = "Unlock\n";
+
 int i1 = 0;
 int i2 = 0;
 int num1 = 0;
