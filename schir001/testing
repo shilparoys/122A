@@ -14,14 +14,13 @@ int num = 0;				//array index
 int password = 0;			//user entered password
 unsigned char go = 0;		//control to exit pswd_wait
 unsigned char isValid = 0;	//user entered correct password or not 
+unsigned char isLock= 0;	//lock or unlock
 int cursorIndex = 12;		//cursor index
-char motor_arr[] = {0x11, 0x33, 0x22, 0x66, 0x44, 0xCC, 0x88, 0x99};	//motor array
+char motor_arr[] = {0x11, 0x33, 0x22, 0x66, 0x44, 0xCC, 0x88, 0x99};
 int position = 0;
 int numPhases = 0;
 unsigned char go1 = 0;
-unsigned char toLock = '2';
-//0 is unlock and 1 is lock
-unsigned char isLock = '1';
+unsigned char toLock = 0;
 unsigned char test = 0;
 //hardcoded passwords 
 int masterP1 = 1234;		
@@ -37,7 +36,6 @@ int TickFct_master( int state ) {
 			break;
 		case pswd_wait:
 			btn = GetKeypadKey();
-			//avoid invalid key press
 			if (btn != '\0' && btn != 'A' && btn != 'B' && btn != 'C' && btn != 'D' && go == 0 ){
 				state = pswd_read;
 			}
@@ -63,10 +61,10 @@ int TickFct_master( int state ) {
 			break;
 		case door:
 			btn = GetKeypadKey();
-			if (btn == '3' && isLock == '1'){
+			if (btn == '3'){
 				state = unlock;
 			}
-			else if(btn == '6' && (isLock == '0')){
+			else if(btn == '6'){
 				state = lock;
 			}
 			else{
@@ -74,14 +72,18 @@ int TickFct_master( int state ) {
 			}
 			break;
 		case lock:
-			toLock = '1';
-			isLock = '1';
-			state = pswd_wait;
+			//if(USART_IsSendReady(0)){
+			//	USART_Send(0x01,0);
+				toLock = 1;
+				LCD_DisplayString1(1, "Sending Lock");
+			//}
 			break;
 		case unlock:
-			toLock = '0';
-			isLock = '0';
-			state = pswd_wait;
+			//if(USART_IsSendReady(0)){
+				toLock = 0;
+			//	USART_Send(0x00, 0);
+				LCD_DisplayString1(1, "Send Unlock");
+		//	}
 			break;
 		default:
 			break;
@@ -116,15 +118,16 @@ int TickFct_master( int state ) {
 			}
 			break;
 		case door:
-			//LCD_DisplayString1(1, "Unlock: 3");
-			//LCD_DisplayString1(17,"Lock:   6");
-			LCD_WriteData(isLock);
+			LCD_DisplayString1(1, "Unlock: 3");
+			LCD_DisplayString1(17,"Lock:   6");
 			break;
 		case lock:
+			isLock = 1;
 			LCD_ClearScreen();
 			LCD_DisplayString1(1, "Lock");
 			break;
 		case unlock:
+			isLock = 0;
 			LCD_ClearScreen();
 			LCD_DisplayString1(1, "Unlock");
 			break;
@@ -134,73 +137,33 @@ int TickFct_master( int state ) {
 	
 	return state;
 }
-unsigned char menu1[] = "Enter Password: ";
-int i1 = 0;
-int i2 = 0;
-int num1 = 0;
-unsigned char canRead = 0;
 
-enum send_data{wait_send};
+enum send_data{init_send, wait_send};
 int send_data(int state){
 	switch(state){
+		case init_send:
+			//state = wait_send;
+			break;
 		case wait_send:
+			state = wait_send;
 			break;
 		default:
 			break;
 	}
 	switch(state){
-		case wait_send:
-			if(USART_IsSendReady(0) && i1 < 15){
-				USART_Send(menu1[i1], 0);
-				i1++;
-			}
-			else{
-				canRead = '1';
-			}
-			break;
-		default:
-			break;
-	}
-	return state;
-}
-
-enum read_data{init_data, readPassword, checkPassword};
-int read_data(int state){
-	switch(state){
-		case init_data:
-			if(canRead == '1'){
-				state = readPassword;
-			}
-			else{
-				LCD_WriteData('A');
-				state = init_data;
-			}
-			break;
-		case readPassword:
-			state = checkPassword;
-			break;
-		case checkPassword:
-			break;
-		default:
-			break;
-	}
-	switch(state){
-		case init_data:
-			break;
-		case readPassword:
-		 if(USART_HasReceived(0)){
+		case init_send:
+		if(USART_HasReceived(0)){
 				test = USART_Receive(0);
-				array[num++] = test;
-		 		USART_Flush(0);
-		 		LCD_WriteData(test);
-		 		i2++;
-		 	}
-		 break;
-		 case checkPassword:
-		 	break;
-		 default:
-		 	break;
-
+				USART_Flush(0);
+				LCD_WriteData(test);
+			}
+			break;
+		case wait_send:
+			if(USART_IsSendReady(0)){
+				USART_Send('r', 0);
+			}
+		default:
+			break;
 	}
 	return state;
 }
@@ -216,14 +179,14 @@ int motor(int state)
 			state = input;
 			break;
 		case input:
-			if(toLock == '1'){
+			if(toLock == 1){
 				numPhases = (90/5.625) * 64;
-				toLock = '2';
+				toLock = 2;
 				state = ccw;
 			}
-			else if(toLock == '0'){
+			else if(toLock == 0){
 				numPhases = (90/5.625)*64;
-				toLock = '2';
+				toLock = 2;
 				state = cw;
 			}
 			else
@@ -302,7 +265,7 @@ int motor(int state)
 
 int main(void)
 {
-	initUSART(0);	//initialize USART (0)
+	initUSART(0);
 	USART_Flush(0);
 	
 	//initalize ports
@@ -310,34 +273,26 @@ int main(void)
 	DDRB = 0xFF; PORTB = 0x00;//lcd data lines
 	DDRD = 0xFF; PORTD = 0x00;//lcd control lines
 	PORTA = 0x00; DDRA = 0xFF;//stepper motor
+	LCD_init();
 	
-	LCD_init();	//LCD initialize
-	
-	tasksNum = 2; // declare number of tasks
+	tasksNum = 3; // declare number of tasks
 	task tsks[tasksNum]; // initialize the task array
 	tasks = tsks; // set the task array
 	
 	// define tasks
 	unsigned char i = 0; // task counter
 
-	//bluetooth
-	/*tasks[i].state = wait_send;
+	tasks[i].state = init_send;
 	tasks[i].period = 150;
 	tasks[i].elapsedTime = tasks[i].period;
 	tasks[i].TickFct = &send_data;
 	i++;
-	tasks[i].state = init_data;
-	tasks[i].period = 150;
-	tasks[i].elapsedTime = tasks[i].period;
-	tasks[i].TickFct = &read_data;
-	i++;*/
-	//password
+
 	tasks[i].state = -1;
-	tasks[i].period = 500;
+	tasks[i].period = 100;
 	tasks[i].elapsedTime = tasks[i].period;
 	tasks[i].TickFct = &TickFct_master;
 	i++;
-	//motor
 	tasks[i].state = -1;
 	tasks[i].period = 3;
 	tasks[i].elapsedTime = tasks[0].period;
