@@ -29,13 +29,6 @@ unsigned char numWrongPass = '0';
 int masterP1 = 1234;		
 int masterP2 = 5112;
 int masterp3 = 9727;
-unsigned char menu1[] = "Intruder Alert\n";
-unsigned char menu2[] = "Lock\n";
-unsigned char menu3[] = "Unlock\n";
-
-int i1 = 0;
-int i2 = 0;
-int num1 = 0;
 
 
 enum masterStates {pswd_wait, pswd_read, checkPwd, door, unlock, lock };
@@ -85,7 +78,7 @@ int TickFct_master( int state ) {
 		case lock:
 			toLock = '1';
 			isLock = '1';
-				state = pswd_wait;
+			state = pswd_wait;
 			break;
 		case unlock:
 			toLock = '0';
@@ -131,7 +124,6 @@ int TickFct_master( int state ) {
 		case door:
 			LCD_DisplayString1(1, "Unlock: 3");
 			LCD_DisplayString1(17,"Lock:   6");
-			//LCD_WriteData(isLock);
 			break;
 		case lock:
 			LCD_ClearScreen();
@@ -147,28 +139,32 @@ int TickFct_master( int state ) {
 	
 	return state;
 }
+unsigned char menu1[] = "Intruder Alert\n";
+unsigned char menu2[] = "Lock\n";
+unsigned char menu3[] = "Unlock\n";
+int i1 = 0;
+int i2 = 0;
+int num1 = 0;
 unsigned char canRead = 0;
 
-enum send_data{invalidPass, stop1};
+enum send_data{wait_send};
 int send_data(int state){
 	switch(state){
 		case -1:
-			if(invalidPass== '1'){
-				i1 = 0;
-				state = invalidPass;
-			}
+			if(numWrongPass == '1')
+				state = wait_send;
 			else
 				state = -1;
 			break;
-		case invalidPass:
-			state = invalidPass;
+		case wait_send:
+			break;
 		default:
 			break;
 	}
 	switch(state){
 		case -1:
 			break;
-		case invalidPass:
+		case wait_send:
 			if(USART_IsSendReady(0) && i1 < 15){
 				USART_Send(menu1[i1], 0);
 				i1++;
