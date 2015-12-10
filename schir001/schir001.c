@@ -23,6 +23,8 @@ unsigned char toLock = '2';
 //0 is unlock and 1 is lock
 unsigned char isLock = '1';
 unsigned char test = 0;
+int wrongPass = 0;
+unsigned char numWrongPass = '0';
 //hardcoded passwords 
 int masterP1 = 1234;		
 int masterP2 = 5112;
@@ -113,12 +115,17 @@ int TickFct_master( int state ) {
 				LCD_DisplayString(1, "Incorrect Pwd");
 				memset(&array[0], 0, sizeof(array));
 				isValid = 0;
+				++wrongPass;
+				if((wrongPass % 3) == 0){
+					LCD_DisplayString1(1, "BAD");
+					numWrongPass = '1';
+				}
 			}
 			break;
 		case door:
-			//LCD_DisplayString1(1, "Unlock: 3");
-			//LCD_DisplayString1(17,"Lock:   6");
-			LCD_WriteData(isLock);
+			LCD_DisplayString1(1, "Unlock: 3");
+			LCD_DisplayString1(17,"Lock:   6");
+			//LCD_WriteData(isLock);
 			break;
 		case lock:
 			LCD_ClearScreen();
@@ -134,7 +141,7 @@ int TickFct_master( int state ) {
 	
 	return state;
 }
-unsigned char menu1[] = "Enter Password: ";
+unsigned char menu1[] = "Intruder Alert\n";
 int i1 = 0;
 int i2 = 0;
 int num1 = 0;
@@ -143,19 +150,24 @@ unsigned char canRead = 0;
 enum send_data{wait_send};
 int send_data(int state){
 	switch(state){
+		case -1:
+			if(numWrongPass == '1')
+				state = wait_send;
+			else
+				state = -1;
+			break;
 		case wait_send:
 			break;
 		default:
 			break;
 	}
 	switch(state){
+		case -1:
+			break;
 		case wait_send:
 			if(USART_IsSendReady(0) && i1 < 15){
 				USART_Send(menu1[i1], 0);
 				i1++;
-			}
-			else{
-				canRead = '1';
 			}
 			break;
 		default:
@@ -172,7 +184,6 @@ int read_data(int state){
 				state = readPassword;
 			}
 			else{
-				LCD_WriteData('A');
 				state = init_data;
 			}
 			break;
@@ -313,7 +324,7 @@ int main(void)
 	
 	LCD_init();	//LCD initialize
 	
-	tasksNum = 2; // declare number of tasks
+	tasksNum = 3; // declare number of tasks
 	task tsks[tasksNum]; // initialize the task array
 	tasks = tsks; // set the task array
 	
@@ -321,19 +332,19 @@ int main(void)
 	unsigned char i = 0; // task counter
 
 	//bluetooth
-	/*tasks[i].state = wait_send;
+	tasks[i].state = -1;
 	tasks[i].period = 150;
 	tasks[i].elapsedTime = tasks[i].period;
 	tasks[i].TickFct = &send_data;
 	i++;
-	tasks[i].state = init_data;
+	/*tasks[i].state = init_data;
 	tasks[i].period = 150;
 	tasks[i].elapsedTime = tasks[i].period;
 	tasks[i].TickFct = &read_data;
 	i++;*/
 	//password
 	tasks[i].state = -1;
-	tasks[i].period = 500;
+	tasks[i].period = 200;
 	tasks[i].elapsedTime = tasks[i].period;
 	tasks[i].TickFct = &TickFct_master;
 	i++;
