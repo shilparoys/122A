@@ -29,6 +29,13 @@ unsigned char numWrongPass = '0';
 int masterP1 = 1234;		
 int masterP2 = 5112;
 int masterp3 = 9727;
+unsigned char menu1[] = "Intruder Alert\n";
+unsigned char menu2[] = "Lock\n";
+unsigned char menu3[] = "Unlock\n";
+
+int i1 = 0;
+int i2 = 0;
+int num1 = 0;
 
 
 enum masterStates {pswd_wait, pswd_read, checkPwd, door, unlock, lock };
@@ -78,7 +85,7 @@ int TickFct_master( int state ) {
 		case lock:
 			toLock = '1';
 			isLock = '1';
-			state = pswd_wait;
+				state = pswd_wait;
 			break;
 		case unlock:
 			toLock = '0';
@@ -140,77 +147,32 @@ int TickFct_master( int state ) {
 	
 	return state;
 }
-unsigned char menu1[] = "Intruder Alert\n";
-unsigned char menu2[] = "Lock\n";
-unsigned char menu3[] = "Unlock\n";
-int i1 = 0;
-int i2 = 0;
 unsigned char canRead = 0;
 
-enum send_data{wait_send, lockMessage, noLockMessage, stop1};
+enum send_data{invalidPass, stop1};
 int send_data(int state){
 	switch(state){
 		case -1:
-			if(numWrongPass == '1'){
+			if(invalidPass== '1'){
 				i1 = 0;
-				state = wait_send;
-			}
-			else if (isLock == '1'){
-				i1 = 0;
-				if(USART_IsSendReady(0)){
-				USART_Send('L', 0);
-				USART_Send('o', 0);
-				USART_Send('c', 0);
-				USART_Send('k', 0);
-				USART_Send('\n', 0);
-			}
-				state = lockMessage;
-			}
-			else if (isLock == '0'){
-				i1 = 0;
-			if(USART_IsSendReady(0)){
-				USART_Send('U', 0);
-				USART_Send('n', 0);
-				USART_Send('l', 0);
-				USART_Send('o', 0);
-				USART_Send('c', 0);
-				USART_Send('k', 0);
-				USART_Send('\n', 0);
-			}
-				state = noLockMessage;
+				state = invalidPass;
 			}
 			else
 				state = -1;
 			break;
-		case wait_send:
-			state = stop1;
-			break;
-		case lockMessage:
-				state = -1;
-			break;
-		case noLockMessage:
-				state = -1;
-			break;
-		case stop1:
-			break;
+		case invalidPass:
+			state = invalidPass;
 		default:
 			break;
 	}
 	switch(state){
 		case -1:
 			break;
-		case wait_send:
+		case invalidPass:
 			if(USART_IsSendReady(0) && i1 < 15){
 				USART_Send(menu1[i1], 0);
 				i1++;
 			}
-			break;
-		case lockMessage:
-			break;
-		case noLockMessage:
-		
-			break;
-		case stop1:
 			break;
 		default:
 			break;
